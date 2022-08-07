@@ -305,24 +305,24 @@ static int run_full_test (NiceAgent *lagent, NiceAgent *ragent, NiceAddress *bas
   g_object_set (G_OBJECT (ragent), "controlling-mode", FALSE, NULL);
 
   /* step: add one stream, with RTP+RTCP components, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
 
-  rs_id = nice_agent_add_stream (ragent, 2);
+  rs_id = nice_agent_add_stream (ragent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 
   /* Gather candidates and test nice_agent_set_port_range */
-  nice_agent_set_port_range (lagent, ls_id, 1, 10000, 11000);
-  nice_agent_set_port_range (lagent, ls_id, 2, 11000, 12000);
+  nice_agent_set_port_range (lagent, ls_id, 1, 10000, 11000, 9000);
+  nice_agent_set_port_range (lagent, ls_id, 2, 11000, 12000, 9000);
   g_assert_true (nice_agent_gather_candidates (lagent, ls_id) == TRUE);
 
   port = get_port (lagent, ls_id, 1);
-  nice_agent_set_port_range (ragent, rs_id, 1, 12000, 13000);
-  nice_agent_set_port_range (ragent, rs_id, 2, port, port);
+  nice_agent_set_port_range (ragent, rs_id, 1, 12000, 13000, 9000);
+  nice_agent_set_port_range (ragent, rs_id, 2, port, port, 9000);
   g_assert_true (nice_agent_gather_candidates (ragent, rs_id) == FALSE);
   g_assert_true (nice_agent_get_local_candidates (ragent, rs_id, 1) == NULL);
   g_assert_true (nice_agent_get_local_candidates (ragent, rs_id, 2) == NULL);
-  nice_agent_set_port_range (ragent, rs_id, 2, 13000, 14000);
+  nice_agent_set_port_range (ragent, rs_id, 2, 13000, 14000, 9000);
   g_assert_true (nice_agent_gather_candidates (ragent, rs_id) == TRUE);
 
   {
@@ -426,7 +426,7 @@ static int run_full_test (NiceAgent *lagent, NiceAgent *ragent, NiceAddress *bas
     g_assert_true (local_cand);
     g_assert_true (remote_cand);
 
-    tmpsock = nice_udp_bsd_socket_new (NULL, &error);
+    tmpsock = nice_udp_bsd_socket_new (NULL, &error, FALSE);
     g_assert_no_error (error);
     nice_socket_send (tmpsock, &remote_cand->addr, 4, "ABCD");
     nice_socket_send (tmpsock, &local_cand->addr, 5, "ABCDE");

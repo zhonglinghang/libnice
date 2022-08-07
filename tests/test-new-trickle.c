@@ -430,8 +430,8 @@ static void init_test(NiceAgent *lagent, NiceAgent *ragent, gboolean connect_new
   lagent_candidate_gathering_done = FALSE;
   ragent_candidate_gathering_done = FALSE;
 
-  global_ls_id = nice_agent_add_stream (lagent, 1);
-  global_rs_id = nice_agent_add_stream (ragent, 1);
+  global_ls_id = nice_agent_add_stream (lagent, "", 1);
+  global_rs_id = nice_agent_add_stream (ragent, "", 1);
 
   g_assert_cmpuint (global_ls_id, >, 0);
   g_assert_cmpuint (global_rs_id, >, 0);

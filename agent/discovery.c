@@ -765,11 +765,14 @@ HostCandidateResult discovery_add_local_host_candidate (
   NiceStream *stream;
   NiceSocket *nicesock = NULL;
   HostCandidateResult res = HOST_CANDIDATE_FAILED;
+  gboolean enable_single_port = true;
   GError *error = NULL;
 
   if (!agent_find_component (agent, stream_id, component_id, &stream, &component))
     return res;
-
+  // if disable single port, component->single_port = 0, 
+  // otherwise, component->single_port is the same as the port on address
+  enable_single_port = component->single_port == nice_address_get_port(address);
   candidate = nice_candidate_new (NICE_CANDIDATE_TYPE_HOST);
   c = (NiceCandidateImpl *) candidate;
   candidate->transport = transport;
@@ -796,7 +799,10 @@ HostCandidateResult discovery_add_local_host_candidate (
   /* note: candidate username and password are left NULL as stream
      level ufrag/password are used */
   if (transport == NICE_CANDIDATE_TRANSPORT_UDP) {
-    nicesock = nice_udp_bsd_socket_new (address, &error);
+    if (!enable_single_port) {
+      // create socket when disable single port
+      nicesock = nice_udp_bsd_socket_new(address, &error, FALSE);
+    }
   } else if (transport == NICE_CANDIDATE_TRANSPORT_TCP_ACTIVE) {
     nicesock = nice_tcp_active_socket_new (agent->main_context, address);
   } else if (transport == NICE_CANDIDATE_TRANSPORT_TCP_PASSIVE) {
@@ -804,7 +810,7 @@ HostCandidateResult discovery_add_local_host_candidate (
   } else {
     /* TODO: Add TCP-SO */
   }
-  if (!nicesock) {
+  if (!nicesock && !enable_single_port) {
     if (error && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_ADDRESS_IN_USE))
       res = HOST_CANDIDATE_DUPLICATE_PORT;
     else
@@ -814,8 +820,10 @@ HostCandidateResult discovery_add_local_host_candidate (
   }
 
   c->sockptr = nicesock;
-  candidate->addr = nicesock->addr;
-  candidate->base_addr = nicesock->addr;
+  if (nicesock != NULL) {
+    candidate->addr = nicesock->addr;
+    candidate->base_addr = nicesock->addr;
+  }
 
   if (priv_local_host_candidate_duplicate_port (agent, candidate, accept_duplicate)) {
     res = HOST_CANDIDATE_DUPLICATE_PORT;
@@ -828,9 +836,10 @@ HostCandidateResult discovery_add_local_host_candidate (
     goto errors;
   }
 
-  _priv_set_socket_tos (agent, nicesock, stream->tos);
-  nice_component_attach_socket (component, nicesock);
-
+  if (nicesock != NULL) {
+    _priv_set_socket_tos (agent, nicesock, stream->tos);
+    nice_component_attach_socket (component, nicesock);
+  }
   *outcandidate = c;
 
   return HOST_CANDIDATE_SUCCESS;
@@ -941,7 +950,7 @@ discovery_discover_tcp_server_reflexive_candidates (
     nice_address_set_port (&caddr, 0);
     if (agent->force_relay == FALSE &&
         c->transport != NICE_CANDIDATE_TRANSPORT_UDP &&
-        c->type == NICE_CANDIDATE_TYPE_HOST &&
+        c->type == NICE_CANDIDATE_TYPE_HOST && ((NiceCandidateImpl *) c)->sockptr != NULL &&
         nice_address_equal (&base_addr, &caddr)) {
       nice_address_set_port (address, nice_address_get_port (&c->addr));
       discovery_add_server_reflexive_candidate (

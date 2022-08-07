@@ -43,11 +43,12 @@
 #endif
 
 #include <string.h>
+#include <stdio.h>
 
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
-
+#include "agent-priv.h"
 #include "address.h"
 
 #ifdef G_OS_WIN32
@@ -261,6 +262,24 @@ nice_address_to_string (const NiceAddress *addr, gchar *dst)
   }
 }
 
+NICEAPI_EXPORT gboolean
+nice_address_any (const NiceAddress *addr)
+{
+  switch (addr->s.addr.sa_family)
+  {
+    case AF_INET:
+      return (addr->s.ip4.sin_addr.s_addr == 0);
+    case AF_INET6:
+    {
+      struct in6_addr ip6;
+      memset(&ip6, 0, sizeof(ip6));
+      return memcmp(&addr->s.ip6.sin6_addr, &ip6, sizeof(ip6)) == 0;
+    }
+    default: {
+      g_return_val_if_reached (FALSE);
+    }
+  }
+}
 
 NICEAPI_EXPORT gboolean
 nice_address_equal (const NiceAddress *a, const NiceAddress *b)
@@ -293,6 +312,22 @@ nice_address_dup (const NiceAddress *a)
 
   *dup = *a;
   return dup;
+}
+
+void
+nice_address_debug_log(const gchar *prefix, void *agent, NiceAddress *addr)
+{
+  if (!nice_debug_is_enabled()) {
+    return;
+  }
+
+  if(addr != NULL) {
+    gchar addr_str[256];
+    nice_address_to_string(addr, addr_str);
+    nice_debug("%s, Agent %p addr: %p, %s:%d", prefix, agent, addr, addr_str, nice_address_get_port(addr));
+  } else {
+    nice_debug("%s, Agent %p addr: NULL", prefix, agent);
+  }
 }
 
 

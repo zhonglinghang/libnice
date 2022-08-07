@@ -242,8 +242,8 @@ static int run_fallback_test (NiceAgent *lagent, NiceAgent *ragent, NiceAddress 
   g_object_set (G_OBJECT (ragent), "controlling-mode", FALSE, NULL);
 
   /* step: add one stream, with RTP+RTCP components, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 2);
-  rs_id = nice_agent_add_stream (ragent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
+  rs_id = nice_agent_add_stream (ragent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 
@@ -378,8 +378,8 @@ static int run_safe_fallback_test (NiceAgent *lagent, NiceAgent *ragent, NiceAdd
   g_object_set (G_OBJECT (ragent), "controlling-mode", FALSE, NULL);
 
   /* step: add one stream, with RTP+RTCP components, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 2);
-  rs_id = nice_agent_add_stream (ragent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
+  rs_id = nice_agent_add_stream (ragent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 

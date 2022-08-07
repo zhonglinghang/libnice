@@ -53,6 +53,7 @@ G_BEGIN_DECLS
  * last updated from ICE ID-19 
  * (the below sizes include the terminating NULL): */
 
+#define NICE_STREAM_MAX_UFRAG_PREFIX 64 + 1 /* ufrag prefix + NULL */
 #define NICE_STREAM_MAX_UFRAG   256 + 1  /* ufrag + NULL */
 #define NICE_STREAM_MAX_UNAME   256 * 2 + 1 + 1 /* 2*ufrag + colon + NULL */
 #define NICE_STREAM_MAX_PWD     256 + 1  /* pwd + NULL */
@@ -81,6 +82,7 @@ struct _NiceStream {
   gboolean initial_binding_request_received;
   GSList *components; /* list of 'NiceComponent' objects */
   GSList *conncheck_list;         /* list of CandidateCheckPair items */
+  gchar local_ufrag_prefix[NICE_STREAM_MAX_UFRAG_PREFIX];
   gchar local_ufrag[NICE_STREAM_MAX_UFRAG];
   gchar local_password[NICE_STREAM_MAX_PWD];
   gchar remote_ufrag[NICE_STREAM_MAX_UFRAG];
@@ -105,7 +107,7 @@ typedef struct {
 GType nice_stream_get_type (void);
 
 NiceStream *
-nice_stream_new (guint stream_id, guint n_components, NiceAgent *agent);
+nice_stream_new (guint stream_id, guint n_components, const char *ufrag_prefix, NiceAgent *agent);
 
 void
 nice_stream_close (NiceAgent *agent, NiceStream *stream);

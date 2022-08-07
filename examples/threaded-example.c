@@ -157,7 +157,7 @@ example_thread(void *data)
       G_CALLBACK(cb_component_state_changed), NULL);
 
   // Create a new stream with one component
-  stream_id = nice_agent_add_stream(agent, 1);
+  stream_id = nice_agent_add_stream(agent, "", 1);
   if (stream_id == 0)
     g_error("Failed to add stream");
 

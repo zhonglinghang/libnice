@@ -518,6 +518,27 @@ gboolean
 nice_agent_add_local_address (NiceAgent *agent, NiceAddress *addr);
 
 /**
+ * 
+ * @param agent 
+ * @param ufrag 
+ * @param stream_id 
+ * @param remote_addr 
+ * @param local_addr 
+ * @param len 
+ * @param buf 
+ * @return gint 
+ */
+gint
+nice_agent_bind_udp_stream_component(
+  NiceAgent *agent,
+  const char *ufrag,
+  guint stream_id,
+  struct sockaddr *remote_addr,
+  struct sockaddr *local_addr,
+  guint len,
+  gchar* buf);
+
+/**
  * nice_agent_add_stream:
  * @agent: The #NiceAgent Object
  * @n_components: The number of components to add to the stream
@@ -530,6 +551,7 @@ nice_agent_add_local_address (NiceAgent *agent, NiceAddress *addr);
 guint
 nice_agent_add_stream (
   NiceAgent *agent,
+  const char * ufrag_prefix,
   guint n_components);
 
 /**
@@ -556,6 +578,7 @@ nice_agent_remove_stream (
  * @component_id: The ID of the component
  * @min_port: The minimum port to use
  * @max_port: The maximum port to use
+ * @single_port: for single media port
  *
  * Sets a preferred port range for allocating host candidates.
  * <para>
@@ -573,7 +596,8 @@ nice_agent_set_port_range (
     guint stream_id,
     guint component_id,
     guint min_port,
-    guint max_port);
+    guint max_port,
+    guint single_port);
 
 /**
  * nice_agent_set_relay_info:

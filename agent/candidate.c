@@ -70,6 +70,7 @@ nice_candidate_new (NiceCandidateType type)
 
   c = g_slice_new0 (NiceCandidateImpl);
   c->c.type = type;
+  c->c.localSocks = NULL;
   return (NiceCandidate *) c;
 }
 
@@ -90,6 +91,10 @@ nice_candidate_free (NiceCandidate *candidate)
 
   if (c->stun_server)
     nice_address_free (c->stun_server);
+  
+  if (c->c.localSocks) {
+    g_slist_free(c->c.localSocks);
+  }
 
   g_slice_free (NiceCandidateImpl, c);
 }
@@ -419,7 +424,7 @@ nice_candidate_copy (const NiceCandidate *candidate)
   copy->c.password = g_strdup (copy->c.password);
   if (copy->stun_server)
     copy->stun_server = nice_address_dup (copy->stun_server);
-
+  copy->c.localSocks = g_slist_copy(candidate->localSocks);
   return (NiceCandidate *) copy;
 }
 

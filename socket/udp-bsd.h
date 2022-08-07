@@ -43,8 +43,11 @@
 
 G_BEGIN_DECLS
 
+NiceSocket * 
+nice_udp_bsd_socket_new_hp(NiceAddress *addr, NiceAddress *local_addr, NiceAddress *peer_addr);
+
 NiceSocket *
-nice_udp_bsd_socket_new (NiceAddress *addr, GError **error);
+nice_udp_bsd_socket_new (NiceAddress *addr, GError **error, gboolean re_use_addr);
 
 G_END_DECLS
 

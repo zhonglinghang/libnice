@@ -145,6 +145,12 @@ nice_socket_is_based_on (NiceSocket *sock, NiceSocket *other);
 void
 nice_socket_free (NiceSocket *sock);
 
+gboolean
+nice_socket_remote_address_equal(NiceSocket *sock, const NiceAddress *b);
+
+void
+nice_socket_debug_log(const char* prefix, NiceAgent *agent, NiceSocket *sock);
+
 #include "udp-bsd.h"
 #include "tcp-bsd.h"
 #include "tcp-active.h"

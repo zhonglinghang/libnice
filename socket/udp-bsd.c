@@ -79,8 +79,49 @@ struct UdpBsdSocketPrivate
   GSocketAddress *gaddr;
 };
 
+NiceSocket * 
+nice_udp_bsd_socket_new_hp (NiceAddress *listen_addr, NiceAddress *local_addr, NiceAddress *peer_addr)
+{
+  union {
+    struct sockaddr_storage storage;
+    struct sockaddr addr;
+  } name;
+  GSocketAddress *gaddr;
+  gboolean gret = FALSE;
+  NiceSocket *sock = nice_udp_bsd_socket_new(listen_addr, NULL, TRUE);
+  if (sock != NULL) {
+    nice_address_copy_to_sockaddr(peer_addr, &name.addr);
+    gaddr = g_socket_address_new_from_native(&name.addr, sizeof(name));
+    if (gaddr != NULL) {
+      gret = g_socket_connect(sock->fileno, gaddr, NULL, NULL);
+      if (!gret) {
+        nice_debug("new bsd sock2, connect to remote failed");
+      }
+      g_object_unref(gaddr);
+    } else {
+      nice_debug("new bsd sock2, g_socket_address_new_from_native failed");
+    }
+  } else {
+    nice_debug("new bsd sock2, create sock failed");
+  }
+
+  if (!gret) {
+    g_slice_free(struct UdpBsdSocketPrivate, sock->priv);
+    g_socket_close(sock->fileno, NULL);
+    g_object_unref(sock->fileno);
+    g_slice_free(NiceSocket, sock);
+    return NULL;
+  }
+
+  if (sock != NULL && local_addr != NULL) {
+    sock->addr = *local_addr;
+  }
+  // nice_socket_debug_log("new bsd sock2", NULL, sock);
+  return sock;
+}
+
 NiceSocket *
-nice_udp_bsd_socket_new (NiceAddress *addr, GError **error)
+nice_udp_bsd_socket_new (NiceAddress *addr, GError **error, gboolean re_use_addr)
 {
   union {
     struct sockaddr_storage storage;
@@ -151,7 +192,7 @@ nice_udp_bsd_socket_new (NiceAddress *addr, GError **error)
   g_socket_set_blocking (gsock, false);
   gaddr = g_socket_address_new_from_native (&name.addr, sizeof (name));
   if (gaddr != NULL) {
-    gret = g_socket_bind (gsock, gaddr, FALSE, error);
+    gret = g_socket_bind (gsock, gaddr, re_use_addr, error);
     g_object_unref (gaddr);
   }
 

@@ -75,7 +75,7 @@ test_io_stream_properties (NiceAddress *addr)
   g_object_set (G_OBJECT (agent), "upnp", FALSE, NULL);
   nice_agent_add_local_address (agent, addr);
 
-  stream_id = nice_agent_add_stream (agent, 1);
+  stream_id = nice_agent_add_stream (agent, "", 1);
 
   /* Try building an I/O stream around it. */
   io_stream = nice_agent_get_io_stream (agent, stream_id, 1);
@@ -133,7 +133,7 @@ test_pollable_properties (NiceAddress *addr)
   nice_agent_add_local_address (agent, addr);
 
   /* Add a stream. */
-  stream_id = nice_agent_add_stream (agent, 1);
+  stream_id = nice_agent_add_stream (agent, "", 1);
 
   /* Try building an I/O stream around it. */
   io_stream = nice_agent_get_io_stream (agent, stream_id, 1);
@@ -304,7 +304,7 @@ test_pollable_cancellation (NiceAddress *addr)
   nice_agent_add_local_address (agent, addr);
 
   /* Add a stream. */
-  stream_id = nice_agent_add_stream (agent, 1);
+  stream_id = nice_agent_add_stream (agent, "", 1);
 
   /* Try building an I/O stream around it. */
   io_stream = nice_agent_get_io_stream (agent, stream_id, 1);
@@ -383,7 +383,7 @@ test_zero_length_reads_writes (NiceAddress *addr)
   nice_agent_add_local_address (agent, addr);
 
   /* Add a stream. */
-  stream_id = nice_agent_add_stream (agent, 1);
+  stream_id = nice_agent_add_stream (agent, "", 1);
 
   /* Try building an I/O stream around it. */
   io_stream = nice_agent_get_io_stream (agent, stream_id, 1);

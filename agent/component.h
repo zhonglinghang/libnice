@@ -226,6 +226,7 @@ struct _NiceComponent {
 
   guint min_port;
   guint max_port;
+  guint single_port;
 
   /* Queue of messages received before a selected socket was available to send
    * ACKs on. The messages are dequeued to the pseudo-TCP socket once a selected

@@ -93,7 +93,7 @@ main (void)
   g_assert_true (nice_address_equal (agent->local_addresses->data, &addr_local));
 
   /* add a stream */
-  stream_id = nice_agent_add_stream (agent, 1);
+  stream_id = nice_agent_add_stream (agent, "", 1);
   nice_agent_gather_candidates (agent, stream_id);
 
   /* adding a stream should cause host candidates to be generated */

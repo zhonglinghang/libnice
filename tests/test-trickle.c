@@ -287,9 +287,9 @@ int main (void)
   g_object_set (G_OBJECT (ragent), "upnp", FALSE, NULL);
 
   /* step: add one stream, with RTP+RTCP components, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 1);
+  ls_id = nice_agent_add_stream (lagent, "", 1);
 
-  rs_id = nice_agent_add_stream (ragent, 1);
+  rs_id = nice_agent_add_stream (ragent, "", 1);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 

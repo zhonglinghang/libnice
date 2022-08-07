@@ -120,7 +120,7 @@ int main (void)
   /* step: add a timer to catch state changes triggered by signals */
   timer_id = g_timeout_add (30000, timer_cb, NULL);
 
-  ls_id = nice_agent_add_stream (lagent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   nice_agent_get_local_credentials(lagent, ls_id, &lufrag, &lpassword);
 
@@ -133,11 +133,11 @@ int main (void)
   global_components_ready_exit = 4;
 
   if (ADD_2_STREAMS) {
-    rs_id_1 = nice_agent_add_stream (ragent, 2);
+    rs_id_1 = nice_agent_add_stream (ragent, "", 2);
     g_assert_cmpuint (rs_id_1, >, 0);
     nice_agent_get_local_credentials(ragent, rs_id_1, &rufrag1, &rpassword1);
 
-    rs_id_2 = nice_agent_add_stream (ragent, 2);
+    rs_id_2 = nice_agent_add_stream (ragent, "", 2);
     g_assert_cmpuint (rs_id_2, >, 0);
     nice_agent_get_local_credentials(ragent, rs_id_2, &rufrag2, &rpassword2);
 
@@ -170,7 +170,7 @@ int main (void)
     nice_agent_attach_recv (ragent, rs_id_2, NICE_COMPONENT_TYPE_RTCP,
         g_main_loop_get_context (global_mainloop), cb_nice_recv, NULL);
   } else {
-    rs_id_1 = nice_agent_add_stream (ragent, 2);
+    rs_id_1 = nice_agent_add_stream (ragent, "", 2);
     g_assert_cmpuint (rs_id_1, >, 0);
     nice_agent_get_local_credentials(ragent, rs_id_1, &rufrag1, &rpassword1);
 

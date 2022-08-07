@@ -391,9 +391,9 @@ static int run_full_test (NiceAgent *lagent, NiceAgent *ragent, NiceAddress *bas
   g_object_set (G_OBJECT (ragent), "controlling-mode", FALSE, NULL);
 
   /* step: add one stream, with RTP+RTCP components, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
 
-  rs_id = nice_agent_add_stream (ragent, 2);
+  rs_id = nice_agent_add_stream (ragent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 #if USE_TURN
@@ -410,19 +410,19 @@ static int run_full_test (NiceAgent *lagent, NiceAgent *ragent, NiceAddress *bas
 
   /* Gather candidates and test nice_agent_set_port_range */
   for (port = 10000; port < 60000; port++) {
-    nice_agent_set_port_range (lagent, ls_id, 1, port, port);
+    nice_agent_set_port_range (lagent, ls_id, 1, port, port, 9000);
     if (nice_agent_gather_candidates (lagent, ls_id))
       break;
   }
 
   g_assert_cmpuint (port, ==, get_port (lagent, ls_id, 1));
 
-  nice_agent_set_port_range (ragent, rs_id, 2, port, port);
+  nice_agent_set_port_range (ragent, rs_id, 2, port, port, 9000);
 
   g_assert_true (nice_agent_gather_candidates (ragent, rs_id) == FALSE);
   g_assert_true (nice_agent_get_local_candidates (ragent, rs_id, 1) == NULL);
   g_assert_true (nice_agent_get_local_candidates (ragent, rs_id, 2) == NULL);
-  nice_agent_set_port_range (ragent, rs_id, 2, 0, 0);
+  nice_agent_set_port_range (ragent, rs_id, 2, 0, 0, 9000);
   g_assert_true (nice_agent_gather_candidates (lagent, ls_id) == TRUE);
   g_assert_true (nice_agent_gather_candidates (ragent, rs_id) == TRUE);
 
@@ -576,9 +576,9 @@ static int run_full_test_delayed_answer (NiceAgent *lagent, NiceAgent *ragent, N
   g_object_set (G_OBJECT (ragent), "controlling-mode", FALSE, NULL);
 
   /* step: add one stream, with RTP+RTCP components, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
 
-  rs_id = nice_agent_add_stream (ragent, 2);
+  rs_id = nice_agent_add_stream (ragent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 
@@ -700,9 +700,9 @@ static int run_full_test_wrong_password (NiceAgent *lagent, NiceAgent *ragent, N
   g_object_set (G_OBJECT (ragent), "controlling-mode", FALSE, NULL);
 
   /* step: add one stream, with one component, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 1);
+  ls_id = nice_agent_add_stream (lagent, "", 1);
 
-  rs_id = nice_agent_add_stream (ragent, 1);
+  rs_id = nice_agent_add_stream (ragent, "", 1);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 
@@ -787,9 +787,9 @@ static int run_full_test_control_conflict (NiceAgent *lagent, NiceAgent *ragent,
   g_object_set (G_OBJECT (ragent), "controlling-mode", role, NULL);
 
   /* step: add one stream, with one component, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 1);
+  ls_id = nice_agent_add_stream (lagent, "", 1);
 
-  rs_id = nice_agent_add_stream (ragent, 1);
+  rs_id = nice_agent_add_stream (ragent, "", 1);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 

@@ -277,9 +277,100 @@ void
 nice_socket_free (NiceSocket *sock)
 {
   if (sock) {
+    nice_socket_debug_log("free sock", NULL, sock);
     sock->close (sock);
     g_slice_free (NiceSocket,sock);
   }
+}
+
+gboolean
+nice_socket_remote_address_equal(NiceSocket *sock, const NiceAddress *b)
+{
+  union {
+    struct sockaddr_storage storage;
+    struct sockaddr addr;
+    struct sockaddr_in ip4;
+    struct sockaddr_in6 ip6;
+  } name;
+  GSocketAddress *addr_remote = NULL;
+  if (sock == NULL || sock->fileno == NULL || b == NULL) {
+    return FALSE;
+  }
+  addr_remote = g_socket_get_remote_address(sock->fileno, NULL);
+  if (addr_remote == NULL) {
+    return FALSE;
+  }
+
+  if (!g_socket_address_to_native (addr_remote, &name.addr, sizeof(name), NULL)) {
+    g_object_unref(addr_remote);
+    return FALSE;
+  }
+  g_object_unref(addr_remote);
+
+  switch(name.addr.sa_family) 
+  {
+    case AF_INET:
+      return (name.ip4.sin_addr.s_addr == b->s.ip4.sin_addr.s_addr) && (name.ip4.sin_port == b->s.ip4.sin_port);
+    
+    case AF_INET6:
+      return IN6_ARE_ADDR_EQUAL(&name.ip6.sin6_addr, &b->s.ip6.sin6_addr) && (name.ip6.sin6_port == b->s.ip6.sin6_port)
+              && (name.ip6.sin6_scope_id == 0 || b->s.ip6.sin6_scope_id == 0 || (name.ip6.sin6_scope_id == b->s.ip6.sin6_scope_id));
+    default:
+      g_return_val_if_reached (FALSE);
+  }
+}
+
+static char *socket_address_to_string(GSocketAddress *address)
+{
+  char *res = NULL;
+
+  if (G_IS_INET_SOCKET_ADDRESS (address)) {
+    GInetAddress *inet_address;
+    char *str;
+    int port;
+
+    inet_address = g_inet_socket_address_get_address(G_INET_SOCKET_ADDRESS(address));
+    str = g_inet_address_to_string(inet_address);
+    port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(address));
+    res = g_strdup_printf("%s:%d", str, port);
+    g_free(str);
+  }
+  return res;
+}
+
+void nice_socket_debug_log(const char *prefix, NiceAgent *agent, NiceSocket *sock)
+{
+  GSocketAddress *addr_local = NULL, *addr_remote = NULL;
+  char *local_addr_str = NULL, *remote_addr_str = NULL;
+  if (!nice_debug_is_enabled()) {
+    return;
+  }
+
+  if(prefix == NULL) {
+    nice_debug("out sock address, prefix == NULL");
+    return;
+  }
+  if (sock == NULL || sock->fileno == NULL) {
+    nice_debug("%s, Agent %p, sock: %p, sock->fileno: %p", prefix, agent, sock, sock == NULL ? NULL: sock->fileno);
+    goto done;
+  }
+
+  addr_local = g_socket_get_local_address(sock->fileno, NULL);
+  if (addr_local != NULL) {
+    local_addr_str = socket_address_to_string(addr_local);
+  }
+  addr_remote = g_socket_get_remote_address(sock->fileno, NULL);
+  if (addr_remote != NULL) {
+    remote_addr_str = socket_address_to_string(addr_remote);
+  }
+
+  nice_debug("%s, Agent %p, socket %p, local: %s, remote: %s", prefix, agent, sock, local_addr_str == NULL? "" : local_addr_str,
+            remote_addr_str == NULL ? "" : remote_addr_str);
+done:
+  if (local_addr_str) g_free(local_addr_str);
+  if (remote_addr_str) g_free(remote_addr_str);
+  if (addr_local) g_object_unref(addr_local);
+  if (addr_remote) g_object_unref(addr_remote);
 }
 
 static void

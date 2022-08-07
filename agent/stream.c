@@ -40,7 +40,7 @@
 #endif
 
 #include <string.h>
-
+#include <stdio.h>
 #include "stream.h"
 
 /* Simple tracking for the number of alive streams. These must be accessed
@@ -58,7 +58,7 @@ nice_stream_finalize (GObject *obj);
  * @brief ICE stream functionality
  */
 NiceStream *
-nice_stream_new (guint stream_id, guint n_components, NiceAgent *agent)
+nice_stream_new (guint stream_id, guint n_components, const char* ufrag_prefix, NiceAgent *agent)
 {
   NiceStream *stream = NULL;
   guint n;
@@ -78,6 +78,8 @@ nice_stream_new (guint stream_id, guint n_components, NiceAgent *agent)
   stream->n_components = n_components;
 
   stream->peer_gathering_done = !agent->use_ice_trickle;
+
+  g_strlcpy(stream->local_ufrag_prefix, ufrag_prefix, NICE_STREAM_MAX_UFRAG_PREFIX);
 
   return stream;
 }
@@ -114,8 +116,18 @@ void
 nice_stream_initialize_credentials (NiceStream *stream, NiceRNG *rng)
 {
   /* note: generate ufrag/pwd for the stream (see ICE 15.4.
-   *       '"ice-ufrag" and "ice-pwd" Attributes', ID-19) */
+   *       '"ice-ufrag" and "ice-pwd" Attributes', ID-19) 
+   * ufrag = prefix + "#" + stream_id + "#" + random(4)
+   */
+  gchar local_ufrag[NICE_STREAM_DEF_UFRAG], stream_id[100];
   nice_rng_generate_bytes_print (rng, NICE_STREAM_DEF_UFRAG - 1, stream->local_ufrag);
+  g_strlcat(stream->local_ufrag, stream->local_ufrag_prefix, NICE_STREAM_MAX_UFRAG-1);
+  g_strlcat(stream->local_ufrag, "#", NICE_STREAM_MAX_UFRAG-1);
+  snprintf(stream_id, sizeof(stream_id), "%u", stream->id);
+  g_strlcat(stream->local_ufrag, stream_id, NICE_STREAM_MAX_UFRAG-1);
+  g_strlcat(stream->local_ufrag, "#", NICE_STREAM_MAX_UFRAG-1);
+  g_strlcat(stream->local_ufrag, local_ufrag, NICE_STREAM_MAX_UFRAG-1);
+  
   nice_rng_generate_bytes_print (rng, NICE_STREAM_DEF_PWD - 1, stream->local_password);
 
   /* reset remote credentials, because we cannot assume that we'll

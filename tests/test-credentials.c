@@ -119,8 +119,8 @@ static void setup(NiceAgent *lagent, NiceAgent *ragent)
 {
   NiceAddress addr;
 
-  g_assert_cmpuint (nice_agent_add_stream (lagent, 1), ==, 1);
-  g_assert_cmpuint (nice_agent_add_stream (ragent, 1), ==, 1);
+  g_assert_cmpuint (nice_agent_add_stream (lagent, "", 1), ==, 1);
+  g_assert_cmpuint (nice_agent_add_stream (ragent, "", 1), ==, 1);
   g_assert_true (NULL != lagent->streams);
   g_assert_true (NULL != ragent->streams);
 

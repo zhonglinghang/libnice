@@ -131,8 +131,8 @@ socket_source_attach (SocketSource *socket_source, GMainContext *context)
 static void
 socket_source_detach (SocketSource *source)
 {
-  nice_debug ("Detaching source %p (socket %p, FD %d) from context %p",
-      source->source, source->socket,
+  nice_debug ("Detaching source %p, %p (socket %p, FD %d) from context %p",
+      source, source->source, source->socket,
       (source->socket->fileno != NULL) ?
           g_socket_get_fd (source->socket->fileno) : 0,
       (source->source != NULL) ? g_source_get_context (source->source) : 0);
@@ -181,7 +181,7 @@ nice_component_remove_socket (NiceAgent *agent, NiceComponent *cmp,
     NiceCandidateImpl *candidate = (NiceCandidateImpl *) i->data;
     GSList *next = i->next;
 
-    if (!nice_socket_is_based_on (candidate->sockptr, nsocket)) {
+    if (candidate->sockptr == NULL || !nice_socket_is_based_on (candidate->sockptr, nsocket)) {
       i = next;
       continue;
     }
@@ -678,8 +678,8 @@ nice_component_attach_socket (NiceComponent *component, NiceSocket *nicesock)
   }
 
   /* Create and attach a source */
-  nice_debug ("Component %p: Attach source (stream %u).",
-      component, component->stream_id);
+  nice_debug ("Component %p: Socket source: %p, Attach source (stream %u).",
+      component, socket_source, component->stream_id);
   socket_source_attach (socket_source, component->ctx);
 }
 

@@ -240,8 +240,8 @@ static int run_consent_test (NiceAgent *lagent, NiceAgent *ragent, NiceAddress *
       "consent-freshness", TRUE, NULL);
 
   /* step: add one stream, with RTP+RTCP components, to each agent */
-  ls_id = nice_agent_add_stream (lagent, 2);
-  rs_id = nice_agent_add_stream (ragent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
+  rs_id = nice_agent_add_stream (ragent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 

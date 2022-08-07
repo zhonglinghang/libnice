@@ -138,6 +138,9 @@ NiceAddress *
 nice_address_dup (const NiceAddress *addr);
 
 
+void 
+nice_address_debug_log(const gchar *prefix, void *agent, NiceAddress *addr);
+
 /**
  * nice_address_set_ipv4:
  * @addr: The #NiceAddress to modify
@@ -229,6 +232,14 @@ nice_address_set_from_sockaddr (NiceAddress *addr, const struct sockaddr *sin);
  */
 void
 nice_address_copy_to_sockaddr (const NiceAddress *addr, struct sockaddr *sin);
+
+/**
+ * 
+ * @param addr 
+ * @return gboolean 
+ */
+gboolean
+nice_address_any(const NiceAddress *addr);
 
 /**
  * nice_address_equal:

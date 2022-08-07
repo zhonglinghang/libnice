@@ -2686,6 +2686,94 @@ priv_add_new_candidate_discovery_stun (NiceAgent *agent,
   ++agent->discovery_unsched_items;
 }
 
+NICEAPI_EXPORT gint
+nice_agent_bind_udp_stream_component(
+  NiceAgent *agent,
+  const char *ufrag,
+  guint stream_id,
+  struct sockaddr *remote_addr,
+  struct sockaddr *local_addr,
+  guint len,
+  gchar* buf)
+{
+  gint res = -1;
+  NiceStream *stream;
+  GSList *i = NULL, *j = NULL, *l = NULL;
+  NiceAddress addr;
+  NiceAddress peer_addr;
+  NiceCandidateTransport transport = NICE_CANDIDATE_TRANSPORT_UDP;
+  gchar remote_addr_str[256];
+
+  g_return_val_if_fail(NICE_IS_AGENT(agent), -1);
+  g_return_val_if_fail(ufrag != NULL, -1);
+  g_return_val_if_fail(remote_addr != NULL, -1);
+  g_return_val_if_fail(local_addr != NULL, -1);
+  g_return_val_if_fail(buf != NULL, -1);
+
+  agent_lock(agent);
+  stream = agent_find_stream(agent, stream_id);
+  if(stream == NULL) {
+    agent_unlock_and_emit(agent);
+    nice_debug("Agent %p: bind component, not find stream, stream id %u", agent, stream->id);
+    return -2;
+  }
+
+  nice_address_init(&addr);
+  nice_address_set_from_sockaddr(&addr, local_addr);
+  nice_address_init(&peer_addr);
+  nice_address_set_from_sockaddr(&peer_addr, remote_addr);
+  nice_address_to_string(&peer_addr, remote_addr_str);
+
+  for (i = stream->components; i; i = i->next) {
+    NiceComponent *component = i->data;
+    for(j = component->local_candidates; j; j = j->next) {
+      NiceCandidateImpl *candidate = (NiceCandidateImpl *) j->data;
+      guint local_port = nice_address_get_port(&addr);
+      if ((
+        (nice_address_equal(&candidate->c.base_addr, &addr) && nice_address_equal(&candidate->c.addr, &addr)) ||
+        (nice_address_any(&addr) && addr.s.addr.sa_family == candidate->c.base_addr.s.addr.sa_family &&
+         nice_address_get_port(&candidate->c.base_addr) == local_port && nice_address_get_port(&candidate->c.addr) == local_port
+      )) && candidate->c.transport == transport) {
+        NiceSocket *nicesock = NULL;
+
+        for (l = component->remote_candidates; l; l = l->next) {
+          NiceCandidateImpl *remote_candidate = (NiceCandidateImpl *)l->data;
+          if(nice_socket_remote_address_equal(remote_candidate->sockptr, &peer_addr)) {
+            agent_unlock_and_emit(agent);
+            nice_debug("Agent %p: bind component, remote existed, stream id %u, remote %s:%d", agent, stream->id, remote_addr_str, nice_address_get_port(&peer_addr));
+            return -3;
+          }
+        }
+
+        nicesock = nice_udp_bsd_socket_new_hp(&addr, &candidate->c.base_addr, &peer_addr);
+        if(nicesock == NULL) {
+          agent_unlock_and_emit(agent);
+          nice_debug("Agent %p: bind component, create sock failed, stream id %u", agent, stream->id);
+          return -4;
+        }
+        if(candidate->sockptr == NULL) {
+          candidate->sockptr = nicesock;
+        }
+        candidate->c.localSocks = g_slist_append(candidate->c.localSocks, nicesock);
+        _priv_set_socket_tos(agent, nicesock, stream->tos);
+        nice_component_attach_socket(component, nicesock);
+        if(candidate->sockptr == nicesock) {
+          nice_socket_set_writable_callback(nicesock, _tcp_sock_is_writable, component);
+        }
+
+        conn_check_handle_inbound_stun(agent, stream, component, nicesock, &peer_addr, (gchar*)buf, (guint)len);
+
+        nice_debug("Agent %p: component %p sock %p addr:%s:%d, bind component success, sid %u",
+          agent, component, nicesock, remote_addr_str, nice_address_get_port(&peer_addr), stream->id);
+        res = 0;
+        break;
+      }
+    }
+  }
+  agent_unlock_and_emit(agent);
+  return res;
+}
+
 NiceSocket *
 agent_create_tcp_turn_socket (NiceAgent *agent, NiceStream *stream,
     NiceComponent *component, NiceSocket *nicesock,
@@ -2773,7 +2861,7 @@ priv_add_new_candidate_discovery_turn (NiceAgent *agent,
       NiceSocket *new_socket;
       nice_address_set_port (&addr, 0);
 
-      new_socket = nice_udp_bsd_socket_new (&addr, NULL);
+      new_socket = nice_udp_bsd_socket_new (&addr, NULL, FALSE);
       if (new_socket) {
         _priv_set_socket_tos (agent, new_socket, stream->tos);
         nice_component_attach_socket (component, new_socket);
@@ -2862,6 +2950,7 @@ skip:
 NICEAPI_EXPORT guint
 nice_agent_add_stream (
   NiceAgent *agent,
+  const char * ufrag_prefix,
   guint n_components)
 {
   NiceStream *stream;
@@ -2872,8 +2961,8 @@ nice_agent_add_stream (
   g_return_val_if_fail (n_components >= 1, 0);
 
   agent_lock (agent);
-  stream = nice_stream_new (agent->next_stream_id++, n_components, agent);
-
+  stream = nice_stream_new (agent->next_stream_id++, n_components, ufrag_prefix, agent);
+ 
   agent->streams = g_slist_append (agent->streams, stream);
   nice_debug ("Agent %p : allocating stream id %u (%p)", agent, stream->id, stream);
   if (agent->reliable) {
@@ -3679,7 +3768,7 @@ nice_agent_remove_stream (
 
 NICEAPI_EXPORT void
 nice_agent_set_port_range (NiceAgent *agent, guint stream_id, guint component_id,
-    guint min_port, guint max_port)
+    guint min_port, guint max_port, guint single_port)
 {
   NiceStream *stream;
   NiceComponent *component;
@@ -3914,7 +4003,7 @@ static gboolean priv_add_remote_candidate (
       g_assert (component->selected_pair.remote != NULL);
       nice_debug ("Agent %p : Updating selected pair with higher "
           "priority nominated pair %p.", agent, pair);
-      conn_check_update_selected_pair (agent, component, pair);
+      conn_check_update_selected_pair (agent, component, pair, FALSE);
     }
     conn_check_update_check_list_state_for_ready (agent, stream, component);
   }

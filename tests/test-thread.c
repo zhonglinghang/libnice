@@ -283,8 +283,8 @@ int main (void)
   g_assert_true (lthread);
   g_assert_true (rthread);
 
-  ls_id = nice_agent_add_stream (lagent, 2);
-  rs_id = nice_agent_add_stream (ragent, 2);
+  ls_id = nice_agent_add_stream (lagent, "", 2);
+  rs_id = nice_agent_add_stream (ragent, "", 2);
   g_assert_cmpuint (ls_id, >, 0);
   g_assert_cmpuint (rs_id, >, 0);
 

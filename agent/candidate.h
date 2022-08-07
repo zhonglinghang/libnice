@@ -176,6 +176,7 @@ struct _NiceCandidate
   gchar foundation[NICE_CANDIDATE_MAX_FOUNDATION];
   gchar *username;        /* pointer to a nul-terminated username string */
   gchar *password;        /* pointer to a nul-terminated password string */
+  GSList *localSocks;
 };
 
 /**
